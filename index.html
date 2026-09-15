@@ -1,14 +1,14 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<link rel="manifest" href="manifest.json">
-<meta name="theme-color" content="#0056b3">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<link rel="apple-touch-icon" href="icon-192.png">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>AGO Lubricity Calculator</title>
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#0056b3">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <link rel="apple-touch-icon" href="icon-192.png">
     <style>
         :root {
             --primary-color: #0056b3;
@@ -158,13 +158,13 @@
         <div class="form-group">
             <label for="tankSelect">Select Tank:</label>
             <select id="tankSelect" required>
-                <option value="1404">Tank 1404</option>
-                <option value="3202">Tank 3202</option>
+                <option value="3202">Tank 3202 (AGO Day Tank)</option>
+                <option value="1404">Tank 1404 (AGO Mother Tank)</option>
             </select>
         </div>
 
         <div class="info-box">
-            Tank Safe Height: <span id="safeHeightDisplay">18200</span> mm
+            Tank Safe Height: <span id="safeHeightDisplay">12300</span> mm
         </div>
 
         <div class="form-group">
@@ -174,14 +174,8 @@
         </div>
 
         <div class="form-group">
-            <label for="ppmSelect">Desired PPM:</label>
-            <select id="ppmSelect" required>
-                <option value="30">30 PPM</option>
-                <option value="45">45 PPM</option>
-                <option value="60">60 PPM</option>
-                <option value="70">70 PPM</option>
-                <option value="75">75 PPM</option>
-            </select>
+            <label for="ppmInput">Desired PPM:</label>
+            <input type="number" id="ppmInput" step="any" min="1" placeholder="Enter desired PPM (e.g., 30, 45, 65)" required>
         </div>
 
         <button type="submit" class="btn-submit">Calculate Dose Quantity</button>
@@ -189,35 +183,25 @@
 
     <div id="resultContainer" class="result-container">
         <div class="result-item">Net Receiving Diesel: <span id="netReceivingResult" class="result-value">0</span> mm</div>
-        <div class="result-item">Selected Factor: <span id="factorResult" class="result-value">0</span></div>
+        <div class="result-item">Calculated Factor: <span id="factorResult" class="result-value">0</span></div>
         <div class="result-item" style="font-size: 1.1rem; margin-top: 8px;">
-            <strong>Qty to be Dose: <span id="doseQtyResult" class="result-value">0</span> mm</strong>
+            <strong>Qty to be Dose: <span id="doseQtyResult" class="result-value">0</span> mm of VV-2005A</strong>
         </div>
     </div>
 </div>
 
 <script>
-    // Configuration Data
+    // Configuration Data derived from Excel Sheet
     const tankData = {
-        '1404': {
-            safeHeight: 18200,
-            factors: {
-                '30': 0.004736941,
-                '45': 0.00710541,
-                '60': 0.00947388,
-                '70': 0.01105286,
-                '75': 0.011842353
-            }
-        },
         '3202': {
+            name: 'AGO Day Tank',
             safeHeight: 12300,
-            factors: {
-                '30': 0.010517727,
-                '45': 0.01577659,
-                '60': 0.021035454,
-                '70': 0.02454136,
-                '75': 0.02629431
-            }
+            baseFactor: 0.00015789804
+        },
+        '1404': {
+            name: 'AGO Mother Tank',
+            safeHeight: 18200,
+            baseFactor: 0.0003505908
         }
     };
 
@@ -225,7 +209,7 @@
     const tankSelect = document.getElementById('tankSelect');
     const safeHeightDisplay = document.getElementById('safeHeightDisplay');
     const openingDipInput = document.getElementById('openingDip');
-    const ppmSelect = document.getElementById('ppmSelect');
+    const ppmInput = document.getElementById('ppmInput');
     const lubricityForm = document.getElementById('lubricityForm');
     const resultContainer = document.getElementById('resultContainer');
     const netReceivingResult = document.getElementById('netReceivingResult');
@@ -233,7 +217,7 @@
     const doseQtyResult = document.getElementById('doseQtyResult');
     const dipError = document.getElementById('dipError');
 
-    // Update safe height text when tank selection changes
+    // Update safe height display on tank selection change
     tankSelect.addEventListener('change', function() {
         const selectedTank = tankSelect.value;
         safeHeightDisplay.textContent = tankData[selectedTank].safeHeight;
@@ -267,30 +251,32 @@
 
         const selectedTank = tankSelect.value;
         const safeHeight = tankData[selectedTank].safeHeight;
+        const baseFactor = tankData[selectedTank].baseFactor;
         const openingDip = parseFloat(openingDipInput.value);
-        const selectedPpm = ppmSelect.value;
+        const desiredPpm = parseFloat(ppmInput.value);
 
-        // Formula Calculations
+        // Core Dynamic Calculations
         const netReceivingMm = safeHeight - openingDip;
-        const factor = tankData[selectedTank].factors[selectedPpm];
-        const qtyToBeDosed = netReceivingMm * factor;
+        const calculatedFactor = desiredPpm * baseFactor;
+        const qtyToBeDosed = netReceivingMm * calculatedFactor;
 
-        // Display Results
+        // Output Display
         netReceivingResult.textContent = netReceivingMm.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 2 });
-        factorResult.textContent = factor;
+        factorResult.textContent = calculatedFactor.toFixed(9);
         doseQtyResult.textContent = qtyToBeDosed.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 4 });
 
         resultContainer.style.display = 'block';
     });
+
+    // Register Service Worker for offline PWA operation
+    if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+            navigator.serviceWorker.register('./sw.js')
+                .then(() => console.log('App ready for offline use.'))
+                .catch((err) => console.error('ServiceWorker failed:', err));
+        });
+    }
 </script>
-<script>
-  if ('serviceWorker' in navigator) {
-    window.addEventListener('load', () => {
-      navigator.serviceWorker.register('./sw.js')
-        .then(() => console.log('App ready for offline use.'))
-        .catch((err) => console.error('ServiceWorker failed:', err));
-    });
-  }
-</script>
+
 </body>
 </html>
