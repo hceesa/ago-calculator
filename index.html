@@ -1,3 +1,6 @@
+Here’s the **full revised code** with your requested changes applied — ready to copy and paste directly into your GitHub repository. It keeps the same structure, styling, and language as your original, but now uses **Closing Dip (input)** instead of fixed Safe Height values:
+
+```html
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -86,18 +89,6 @@
             border-color: var(--primary-color);
         }
 
-        .info-box {
-            background-color: var(--accent-bg);
-            padding: 10px;
-            border-radius: 4px;
-            font-size: 0.85rem;
-            margin-bottom: 16px;
-        }
-
-        .info-box span {
-            font-weight: bold;
-        }
-
         .btn-submit {
             width: 100%;
             background-color: var(--primary-color);
@@ -163,14 +154,15 @@
             </select>
         </div>
 
-        <div class="info-box">
-            Tank Safe Height: <span id="safeHeightDisplay">12300</span> mm
+        <div class="form-group">
+            <label for="closingDip">Closing Dip (mm):</label>
+            <input type="number" id="closingDip" step="any" min="0" placeholder="Enter closing dip in mm" required>
         </div>
 
         <div class="form-group">
             <label for="openingDip">Opening Dip (mm):</label>
             <input type="number" id="openingDip" step="any" min="0" placeholder="Enter opening dip in mm" required>
-            <div id="dipError" class="error-message">Opening Dip cannot exceed Safe Height.</div>
+            <div id="dipError" class="error-message">Opening Dip cannot exceed Closing Dip.</div>
         </div>
 
         <div class="form-group">
@@ -191,23 +183,21 @@
 </div>
 
 <script>
-    // Configuration Data derived from Excel Sheet
+    // Configuration Data (only baseFactor per tank now)
     const tankData = {
         '3202': {
             name: 'AGO Day Tank',
-            safeHeight: 12300,
             baseFactor: 0.00015789804
         },
         '1404': {
             name: 'AGO Mother Tank',
-            safeHeight: 18200,
             baseFactor: 0.0003505908
         }
     };
 
     // DOM Elements
     const tankSelect = document.getElementById('tankSelect');
-    const safeHeightDisplay = document.getElementById('safeHeightDisplay');
+    const closingDipInput = document.getElementById('closingDip');
     const openingDipInput = document.getElementById('openingDip');
     const ppmInput = document.getElementById('ppmInput');
     const lubricityForm = document.getElementById('lubricityForm');
@@ -217,20 +207,12 @@
     const doseQtyResult = document.getElementById('doseQtyResult');
     const dipError = document.getElementById('dipError');
 
-    // Update safe height display on tank selection change
-    tankSelect.addEventListener('change', function() {
-        const selectedTank = tankSelect.value;
-        safeHeightDisplay.textContent = tankData[selectedTank].safeHeight;
-        validateDip();
-    });
-
-    // Validate Opening Dip against Safe Height
+    // Validate Opening Dip against Closing Dip
     function validateDip() {
-        const selectedTank = tankSelect.value;
-        const safeHeight = tankData[selectedTank].safeHeight;
-        const dipValue = parseFloat(openingDipInput.value);
+        const closingDip = parseFloat(closingDipInput.value);
+        const openingDip = parseFloat(openingDipInput.value);
 
-        if (!isNaN(dipValue) && dipValue > safeHeight) {
+        if (!isNaN(closingDip) && !isNaN(openingDip) && openingDip > closingDip) {
             dipError.style.display = 'block';
             return false;
         } else {
@@ -240,6 +222,7 @@
     }
 
     openingDipInput.addEventListener('input', validateDip);
+    closingDipInput.addEventListener('input', validateDip);
 
     // Form Submission Calculation
     lubricityForm.addEventListener('submit', function(e) {
@@ -250,13 +233,13 @@
         }
 
         const selectedTank = tankSelect.value;
-        const safeHeight = tankData[selectedTank].safeHeight;
         const baseFactor = tankData[selectedTank].baseFactor;
+        const closingDip = parseFloat(closingDipInput.value);
         const openingDip = parseFloat(openingDipInput.value);
         const desiredPpm = parseFloat(ppmInput.value);
 
         // Core Dynamic Calculations
-        const netReceivingMm = safeHeight - openingDip;
+        const netReceivingMm = closingDip - openingDip;
         const calculatedFactor = desiredPpm * baseFactor;
         const qtyToBeDosed = netReceivingMm * calculatedFactor;
 
@@ -270,13 +253,4 @@
 
     // Register Service Worker for offline PWA operation
     if ('serviceWorker' in navigator) {
-        window.addEventListener('load', () => {
-            navigator.serviceWorker.register('./sw.js')
-                .then(() => console.log('App ready for offline use.'))
-                .catch((err) => console.error('ServiceWorker failed:', err));
-        });
-    }
-</script>
-
-</body>
-</html>
+        window.addEvent
