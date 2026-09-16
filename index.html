@@ -151,14 +151,16 @@
             </select>
         </div>
 
-        <div class="form-group">
-            <label for="closingDip">Closing Dip (mm):</label>
-            <input type="number" id="closingDip" step="any" min="0" placeholder="Enter closing dip in mm" required>
-        </div>
-
+        <!-- Opening Dip first -->
         <div class="form-group">
             <label for="openingDip">Opening Dip (mm):</label>
             <input type="number" id="openingDip" step="any" min="0" placeholder="Enter opening dip in mm" required>
+        </div>
+
+        <!-- Closing Dip below -->
+        <div class="form-group">
+            <label for="closingDip">Closing Dip (mm):</label>
+            <input type="number" id="closingDip" step="any" min="0" placeholder="Enter closing dip in mm" required>
             <div id="dipError" class="error-message">Opening Dip cannot exceed Closing Dip.</div>
         </div>
 
@@ -180,19 +182,11 @@
 </div>
 
 <script>
-    // Configuration Data (only baseFactor per tank now)
     const tankData = {
-        '3202': {
-            name: 'AGO Day Tank',
-            baseFactor: 0.00015789804
-        },
-        '1404': {
-            name: 'AGO Mother Tank',
-            baseFactor: 0.0003505908
-        }
+        '3202': { name: 'AGO Day Tank', baseFactor: 0.00015789804 },
+        '1404': { name: 'AGO Mother Tank', baseFactor: 0.0003505908 }
     };
 
-    // DOM Elements
     const tankSelect = document.getElementById('tankSelect');
     const closingDipInput = document.getElementById('closingDip');
     const openingDipInput = document.getElementById('openingDip');
@@ -204,7 +198,6 @@
     const doseQtyResult = document.getElementById('doseQtyResult');
     const dipError = document.getElementById('dipError');
 
-    // Validate Opening Dip against Closing Dip
     function validateDip() {
         const closingDip = parseFloat(closingDipInput.value);
         const openingDip = parseFloat(openingDipInput.value);
@@ -221,13 +214,9 @@
     openingDipInput.addEventListener('input', validateDip);
     closingDipInput.addEventListener('input', validateDip);
 
-    // Form Submission Calculation
     lubricityForm.addEventListener('submit', function(e) {
         e.preventDefault();
-
-        if (!validateDip()) {
-            return;
-        }
+        if (!validateDip()) return;
 
         const selectedTank = tankSelect.value;
         const baseFactor = tankData[selectedTank].baseFactor;
@@ -235,12 +224,10 @@
         const openingDip = parseFloat(openingDipInput.value);
         const desiredPpm = parseFloat(ppmInput.value);
 
-        // Core Dynamic Calculations
         const netReceivingMm = closingDip - openingDip;
         const calculatedFactor = desiredPpm * baseFactor;
         const qtyToBeDosed = netReceivingMm * calculatedFactor;
 
-        // Output Display
         netReceivingResult.textContent = netReceivingMm.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 2 });
         factorResult.textContent = calculatedFactor.toFixed(9);
         doseQtyResult.textContent = qtyToBeDosed.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 4 });
@@ -248,6 +235,13 @@
         resultContainer.style.display = 'block';
     });
 
-    // Register Service Worker for offline PWA operation
     if ('serviceWorker' in navigator) {
-        window.addEvent
+        window.addEventListener('load', () => {
+            navigator.serviceWorker.register('./sw.js')
+                .then(() => console.log('App ready for offline use.'))
+                .catch((err) => console.error('ServiceWorker failed:', err));
+        });
+    }
+</script>
+
+</body
